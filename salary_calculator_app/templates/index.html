@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calcolatore Stipendio Netto e Costo Azienda</title>
+  <!-- Link to the external stylesheet -->
+  <link rel="stylesheet" href="../static/styles.css">
+  <!-- jQuery for AJAX and DOM manipulation -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h2>Calcolatore Stipendio Netto e Costo Azienda</h2>
+
+  <!-- Form -->
+  <form id="salaryForm">
+    <!-- Row 1: RAL + Contratto -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ral">RAL (€):</label>
+        <input type="number" id="ral" name="ral" value="30000" />
+      </div>
+      <div class="form-group">
+        <label for="contract_type">Tipo Contratto:</label>
+        <select id="contract_type" name="contract_type">
+          <option value="indeterminato">Indeterminato</option>
+          <option value="determinato">Determinato</option>
+          <option value="apprendistato">Apprendistato</option>
+          <option value="collaboratore">Collaboratore</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 2: Agevolazioni + Detrazioni -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="agevolazioni">Agevolazioni Contributive:</label>
+        <select id="agevolazioni" name="agevolazioni">
+          <option value="nessuna agevolazione">Nessuna Agevolazione</option>
+          <option value="under 30">Under 30</option>
+          <option value="donne">Donne</option>
+          <option value="over 50">Over 50</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="detrazioni">Detrazioni Fiscali:</label>
+        <select id="detrazioni" name="detrazioni">
+          <option value="nessuna detrazione">Nessuna Detrazione</option>
+          <option value="bonus rimpatriati">Bonus Rimpatriati</option>
+          <option value="bonus rimpatriati con figli">Bonus Rimpatriati con Figli</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 3: CCNL -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ccnl_sector">Settore CCNL:</label>
+        <select id="ccnl_sector" name="ccnl_sector">
+          <option value="Commercio e Terziario">Commercio e Terziario</option>
+          <option value="Industria Metalmeccanica">Industria Metalmeccanica</option>
+          <option value="Call Center">Call Center</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit">Calcola</button>
+  </form>
+
+  <!-- Currency Toggle (only for summary) -->
+  <div class="currency-toggle">
+    <span>EURO €</span>
+    <label class="switch">
+      <input type="checkbox" id="currency-toggle" />
+      <span class="slider round"></span>
+    </label>
+    <span>Gelato</span>
+  </div>
+
+  <!-- Wrapper for Summary and Detailed Results -->
+  <div class="results-wrapper" id="resultsWrapper" style="display: none;">
+    <!-- Summary Results (2 blocks) -->
+    <div class="results-container">
+      <!-- Summary Card: Stipendio Netto -->
+      <div class="result-block">
+        <h3>Stipendio Netto</h3>
+        <p>Annuale: <span id="stipendioAnnuale"></span></p>
+        <p>Mensile (12 mesi): <span id="stipendio12"></span></p>
+        <p>Mensile (13 mesi): <span id="stipendio13"></span></p>
+        <p>Mensile (14 mesi): <span id="stipendio14"></span></p>
+      </div>
+      <!-- Summary Card: Costo Azienda -->
+      <div class="result-block">
+        <h3>Costo Azienda</h3>
+        <p>Annuale: <span id="costoAnnuale"></span></p>
+      </div>
+    </div>
+
+    <!-- Detailed Breakdown (always in EURO) -->
+    <div class="detailed-results">
+      <!-- Card 1: Stipendio Netto Breakdown -->
+      <div class="result-card">
+        <h3>Stipendio netto</h3>
+        <div class="detail-row">
+          <span class="detail-label">RAL</span>
+          <span class="detail-value" id="detail-ral"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">- INPS:</span>
+          <span class="detail-value" id="detail-inps-dip"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">- Imposta effettiva da pagare:</span>
+          <span class="detail-value" id="detail-irpef-netta"></span>
+        </div>
+        <div class="sub-details">
+          <div class="detail-row">
+            <span class="detail-label">IRPEF:</span>
+            <span class="detail-value" id="detail-irpef"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">+ Addizionale Regionale:</span>
+            <span class="detail-value" id="detail-addizionale-regionale"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">+ Addizionale comunale:</span>
+            <span class="detail-value" id="detail-addizionale-comunale"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">- Detrazione spettante:</span>
+            <span class="detail-value" id="detail-detrazioni-spett"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">- Detrazione L/207:</span>
+            <span class="detail-value" id="detail-detrazione-l207"></span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">+ Trattamento integrativo:</span>
+          <span class="detail-value" id="detail-trattamento-integrativo"></span>
+        </div>
+      </div>
+      
+      <!-- Card 2: Costo azienda Breakdown -->
+      <div class="result-card">
+        <h3>Costo azienda</h3>
+        <div class="detail-row">
+          <span class="detail-label">RAL</span>
+          <span class="detail-value" id="detail-ral-cost"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">+ INPS:</span>
+          <span class="detail-value" id="detail-inps-azienda"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">+ TFR:</span>
+          <span class="detail-value" id="detail-tfr"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">+ INAIL:</span>
+          <span class="detail-value" id="detail-inail"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Link to external JavaScript -->
+<script src="../static/script.js"></script>
+</body>
+</html>
